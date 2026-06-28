@@ -97,6 +97,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
   // UI States
   const [activeMobileRound, setActiveMobileRound] = useState<string>('ROUND_OF_32');
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   // Helper to render flag SVG
   const renderFlag = (code: string) => {
@@ -381,6 +382,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
                 match={m}
                 prediction={pred}
                 isBusted={isBusted}
+                isLocked={hasSubmitted}
                 onChange={(updates) => handlePredictionChange(m.id, updates)}
                 renderFlag={renderFlag}
               />
@@ -499,8 +501,32 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
       {/* Bracket Tree Layout */}
       {/* Desktop view shows all columns side-by-side. Mobile view shows only the active tab */}
       <div className="relative">
+        {/* Zoom Controls (Desktop only) */}
+        <div className="hidden md:flex items-center gap-2 mb-3 justify-end">
+          <span className="text-xs text-slate-500 font-medium">{Math.round(zoomLevel * 100)}%</span>
+          <button
+            onClick={() => setZoomLevel((z) => Math.max(0.4, z - 0.1))}
+            className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 flex items-center justify-center text-sm font-bold transition-colors"
+          >
+            -
+          </button>
+          <button
+            onClick={() => setZoomLevel(1)}
+            className="px-2 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 flex items-center justify-center text-xs font-bold transition-colors"
+          >
+            Reset
+          </button>
+          <button
+            onClick={() => setZoomLevel((z) => Math.min(1.5, z + 0.1))}
+            className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 flex items-center justify-center text-sm font-bold transition-colors"
+          >
+            +
+          </button>
+        </div>
+
         {/* Desktop Symmetrical Bracket */}
-        <div className="hidden md:flex flex-row gap-4 h-[1100px] overflow-x-auto pb-8 select-none">
+        <div className="hidden md:block overflow-x-auto pb-8" style={{ height: `${1100 * zoomLevel}px` }}>
+        <div className="flex flex-row gap-4 h-[1100px] select-none" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left', width: `${100 / zoomLevel}%` }}>
           {/* LEFT WING */}
           {/* Column 1: Round of 32 Left */}
           {renderDesktopColumn('Round of 32', getMatchesByIds([1, 2, 3, 4, 5, 6, 7, 8]))}
@@ -584,6 +610,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
           {/* Column 9: Round of 32 Right */}
           {renderDesktopColumn('Round of 32', getMatchesByIds([9, 10, 11, 12, 13, 14, 15, 16]))}
         </div>
+        </div>
 
         {/* Mobile View */}
         <div className="md:hidden flex flex-col gap-4 py-4">
@@ -651,6 +678,7 @@ interface MatchCardProps {
   match: Match;
   prediction?: Prediction;
   isBusted?: boolean;
+  isLocked?: boolean;
   onChange: (updates: {
     homeScore?: string;
     awayScore?: string;
@@ -660,7 +688,7 @@ interface MatchCardProps {
   renderFlag: (code: string) => React.ReactNode;
 }
 
-function MatchCard({ match, prediction, isBusted, onChange, renderFlag }: MatchCardProps) {
+function MatchCard({ match, prediction, isBusted, isLocked, onChange, renderFlag }: MatchCardProps) {
   const homeScore = prediction ? String(prediction.predictedHomeScore) : '';
   const awayScore = prediction ? String(prediction.predictedAwayScore) : '';
   const predictPenalties = prediction ? prediction.predictPenalties : false;
@@ -828,8 +856,13 @@ function MatchCard({ match, prediction, isBusted, onChange, renderFlag }: MatchC
                 min="0"
                 placeholder="0"
                 value={homeScore}
+                disabled={isLocked}
                 onChange={(e) => onChange({ homeScore: e.target.value })}
-                className="w-10 h-7 bg-slate-950 border border-slate-850 hover:border-slate-800 focus:border-emerald-500 rounded text-center text-xs font-bold text-white focus:outline-none transition-all"
+                className={`w-10 h-7 rounded text-center text-xs font-bold focus:outline-none transition-all ${
+                  isLocked
+                    ? 'bg-slate-800/50 border border-slate-700/50 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-950 border border-slate-850 hover:border-slate-800 focus:border-emerald-500 text-white'
+                }`}
               />
             </div>
           )}
@@ -888,8 +921,13 @@ function MatchCard({ match, prediction, isBusted, onChange, renderFlag }: MatchC
                 min="0"
                 placeholder="0"
                 value={awayScore}
+                disabled={isLocked}
                 onChange={(e) => onChange({ awayScore: e.target.value })}
-                className="w-10 h-7 bg-slate-950 border border-slate-850 hover:border-slate-800 focus:border-emerald-500 rounded text-center text-xs font-bold text-white focus:outline-none transition-all"
+                className={`w-10 h-7 rounded text-center text-xs font-bold focus:outline-none transition-all ${
+                  isLocked
+                    ? 'bg-slate-800/50 border border-slate-700/50 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-950 border border-slate-850 hover:border-slate-800 focus:border-emerald-500 text-white'
+                }`}
               />
             </div>
           )}
