@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import Flag from 'react-world-flags';
 import { useSession } from 'next-auth/react';
 import { saveBracket, PredictionInput } from '@/actions/saveBracket';
@@ -659,6 +659,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
                     match={m}
                     prediction={pred}
                     isBusted={isBusted}
+                    isLocked={hasSubmitted}
                     onChange={(updates) => handlePredictionChange(m.id, updates)}
                     renderFlag={renderFlag}
                   />
@@ -723,7 +724,7 @@ function MatchCard({ match, prediction, isBusted, isLocked, onChange, renderFlag
   const showPenaltyToggle = !isNaN(parsedHome) && !isNaN(parsedAway) && parsedHome === parsedAway;
 
   const handleRowClick = (teamCode: string) => {
-    if (match.isCompleted || !teamCode || teamCode === '') return;
+    if (match.isCompleted || isLocked || !teamCode || teamCode === '') return;
     
     // Clicking a row either selects the penalty winner if scores are tied, or sets a default score
     if (showPenaltyToggle && predictPenalties) {
@@ -828,11 +829,13 @@ function MatchCard({ match, prediction, isBusted, isLocked, onChange, renderFlag
       <div className="flex flex-col gap-2">
         {/* Home Row */}
         <div
-          onClick={() => !match.isCompleted && handleRowClick(match.homeCode)}
+          onClick={() => !match.isCompleted && !isLocked && handleRowClick(match.homeCode)}
           className={`flex items-center justify-between p-2 rounded-lg border transition-all duration-200 ${
             match.isCompleted
               ? 'border-transparent text-slate-300'
-              : 'cursor-pointer hover:bg-slate-800/35 border-transparent text-slate-300 hover:text-slate-200'
+              : isLocked
+                ? 'border-transparent text-slate-300 cursor-default'
+                : 'cursor-pointer hover:bg-slate-800/35 border-transparent text-slate-300 hover:text-slate-200'
           } ${
             isHomeWinner && !match.isCompleted
               ? 'bg-emerald-950/25 border-emerald-500/30 text-white font-semibold'
@@ -893,11 +896,13 @@ function MatchCard({ match, prediction, isBusted, isLocked, onChange, renderFlag
 
         {/* Away Row */}
         <div
-          onClick={() => !match.isCompleted && handleRowClick(match.awayCode)}
+          onClick={() => !match.isCompleted && !isLocked && handleRowClick(match.awayCode)}
           className={`flex items-center justify-between p-2 rounded-lg border transition-all duration-200 ${
             match.isCompleted
               ? 'border-transparent text-slate-300'
-              : 'cursor-pointer hover:bg-slate-800/35 border-transparent text-slate-300 hover:text-slate-200'
+              : isLocked
+                ? 'border-transparent text-slate-300 cursor-default'
+                : 'cursor-pointer hover:bg-slate-800/35 border-transparent text-slate-300 hover:text-slate-200'
           } ${
             isAwayWinner && !match.isCompleted
               ? 'bg-emerald-950/25 border-emerald-500/30 text-white font-semibold'
@@ -982,8 +987,9 @@ function MatchCard({ match, prediction, isBusted, isLocked, onChange, renderFlag
               type="checkbox"
               id={`penalties-${match.id}`}
               checked={predictPenalties}
+              disabled={isLocked}
               onChange={(e) => onChange({ predictPenalties: e.target.checked })}
-              className="rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-950 h-3.5 w-3.5 cursor-pointer"
+              className={`rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-950 h-3.5 w-3.5 ${isLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
             />
             <label
               htmlFor={`penalties-${match.id}`}

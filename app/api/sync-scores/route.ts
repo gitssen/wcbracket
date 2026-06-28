@@ -4,46 +4,47 @@ import { runScoringEngine } from '@/lib/scoring';
 
 // Mock sports feed data for demonstration/cron execution
 const MOCK_SPORTS_FEED = [
-  // Round of 32 (Matches 1 to 16)
-  { matchId: 1, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'CA', winnerName: 'Canada' },
-  { matchId: 2, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },
-  { matchId: 3, homeScore: 3, awayScore: 1, wentToPenalties: false, winnerCode: 'DE', winnerName: 'Germany' },
-  { matchId: 4, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'NL', winnerName: 'Netherlands' },
-  { matchId: 5, homeScore: 1, awayScore: 0, wentToPenalties: false, winnerCode: 'CI', winnerName: 'Ivory Coast' },
-  { matchId: 6, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'FR', winnerName: 'France' },
-  { matchId: 7, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'MX', winnerName: 'Mexico' },
-  { matchId: 8, homeScore: 3, awayScore: 0, wentToPenalties: false, winnerCode: 'GB', winnerName: 'England' },
-  { matchId: 9, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'BE', winnerName: 'Belgium' },
-  { matchId: 10, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'US', winnerName: 'USA' },
-  { matchId: 11, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'ES', winnerName: 'Spain' },
-  { matchId: 12, homeScore: 1, awayScore: 1, wentToPenalties: true, winnerCode: 'PT', winnerName: 'Portugal' },
-  { matchId: 13, homeScore: 1, awayScore: 0, wentToPenalties: false, winnerCode: 'CH', winnerName: 'Switzerland' },
-  { matchId: 14, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'AU', winnerName: 'Australia' },
-  { matchId: 15, homeScore: 3, awayScore: 0, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' },
-  { matchId: 16, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'CO', winnerName: 'Colombia' },
+  // Round of 32 (Matches 1 to 16) — LEFT HALF
+  { matchId: 1, homeScore: 3, awayScore: 1, wentToPenalties: false, winnerCode: 'DE', winnerName: 'Germany' },       // GER vs PAR
+  { matchId: 2, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'FR', winnerName: 'France' },         // FRA vs SWE
+  { matchId: 3, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'CA', winnerName: 'Canada' },         // RSA vs CAN
+  { matchId: 4, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'NL', winnerName: 'Netherlands' },    // NED vs MAR
+  { matchId: 5, homeScore: 1, awayScore: 1, wentToPenalties: true, winnerCode: 'PT', winnerName: 'Portugal' },        // POR vs CRO
+  { matchId: 6, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'ES', winnerName: 'Spain' },          // ESP vs AUT
+  { matchId: 7, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'US', winnerName: 'USA' },            // USA vs BIH
+  { matchId: 8, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'BE', winnerName: 'Belgium' },        // BEL vs SEN
+  // Round of 32 — RIGHT HALF
+  { matchId: 9, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },         // BRA vs JPN
+  { matchId: 10, homeScore: 1, awayScore: 0, wentToPenalties: false, winnerCode: 'CI', winnerName: 'Ivory Coast' },   // CIV vs NOR
+  { matchId: 11, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'MX', winnerName: 'Mexico' },        // MEX vs ECU
+  { matchId: 12, homeScore: 3, awayScore: 0, wentToPenalties: false, winnerCode: 'GB', winnerName: 'England' },       // ENG vs COD
+  { matchId: 13, homeScore: 3, awayScore: 0, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' },     // ARG vs CPV
+  { matchId: 14, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'AU', winnerName: 'Australia' },     // AUS vs EGY
+  { matchId: 15, homeScore: 1, awayScore: 0, wentToPenalties: false, winnerCode: 'CH', winnerName: 'Switzerland' },   // SUI vs ALG
+  { matchId: 16, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'CO', winnerName: 'Colombia' },      // COL vs GHA
 
   // Round of 16 (Matches 17 to 24)
-  { matchId: 17, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },
-  { matchId: 18, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'DE', winnerName: 'Germany' },
-  { matchId: 19, homeScore: 0, awayScore: 2, wentToPenalties: false, winnerCode: 'FR', winnerName: 'France' },
-  { matchId: 20, homeScore: 1, awayScore: 3, wentToPenalties: false, winnerCode: 'GB', winnerName: 'England' },
-  { matchId: 21, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'US', winnerName: 'USA' },
-  { matchId: 22, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'ES', winnerName: 'Spain' },
-  { matchId: 23, homeScore: 1, awayScore: 0, wentToPenalties: false, winnerCode: 'CH', winnerName: 'Switzerland' },
-  { matchId: 24, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' },
+  { matchId: 17, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'DE', winnerName: 'Germany' },       // GER vs FRA
+  { matchId: 18, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'NL', winnerName: 'Netherlands' },   // CAN vs NED
+  { matchId: 19, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'PT', winnerName: 'Portugal' },      // POR vs ESP
+  { matchId: 20, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'BE', winnerName: 'Belgium' },       // USA vs BEL
+  { matchId: 21, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },        // BRA vs CIV
+  { matchId: 22, homeScore: 1, awayScore: 3, wentToPenalties: false, winnerCode: 'GB', winnerName: 'England' },       // MEX vs ENG
+  { matchId: 23, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' },     // ARG vs AUS
+  { matchId: 24, homeScore: 1, awayScore: 0, wentToPenalties: false, winnerCode: 'CH', winnerName: 'Switzerland' },   // SUI vs COL
 
   // Quarter-Finals (Matches 25 to 28)
-  { matchId: 25, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },
-  { matchId: 26, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'GB', winnerName: 'England' },
-  { matchId: 27, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'ES', winnerName: 'Spain' },
-  { matchId: 28, homeScore: 0, awayScore: 2, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' },
+  { matchId: 25, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'DE', winnerName: 'Germany' },       // GER vs NED
+  { matchId: 26, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'BE', winnerName: 'Belgium' },       // POR vs BEL
+  { matchId: 27, homeScore: 2, awayScore: 1, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },        // BRA vs ENG
+  { matchId: 28, homeScore: 2, awayScore: 0, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' },     // ARG vs SUI
 
   // Semi-Finals (Matches 29 to 30)
-  { matchId: 29, homeScore: 3, awayScore: 2, wentToPenalties: false, winnerCode: 'BR', winnerName: 'Brazil' },
-  { matchId: 30, homeScore: 1, awayScore: 1, wentToPenalties: true, winnerCode: 'AR', winnerName: 'Argentina' },
+  { matchId: 29, homeScore: 3, awayScore: 2, wentToPenalties: false, winnerCode: 'DE', winnerName: 'Germany' },       // GER vs BEL
+  { matchId: 30, homeScore: 1, awayScore: 1, wentToPenalties: true, winnerCode: 'AR', winnerName: 'Argentina' },      // BRA vs ARG
 
   // Finals (Match 31)
-  { matchId: 31, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' }
+  { matchId: 31, homeScore: 1, awayScore: 2, wentToPenalties: false, winnerCode: 'AR', winnerName: 'Argentina' }      // GER vs ARG
 ];
 
 export async function GET(request: NextRequest) {
