@@ -49,6 +49,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
   const { data: session } = useSession();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [hasSubmitted, setHasSubmitted] = useState(initialPredictions.length > 0);
 
   // State for active bracket matches (with updated slots as teams advance)
   const [matches, setMatches] = useState<Match[]>(() => {
@@ -174,8 +175,8 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
     const match = matches.find((m) => m.id === matchId);
     if (!match) return;
 
-    // Do not allow predicting completed matches
-    if (match.isCompleted) return;
+    // Do not allow predicting completed matches or if bracket is already submitted
+    if (match.isCompleted || hasSubmitted) return;
 
     const matchesCopy = JSON.parse(JSON.stringify(matches)) as Match[];
     const predictionsCopy = { ...predictions };
@@ -309,6 +310,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
 
   // Save changes to DB
   const handleSave = () => {
+    if (hasSubmitted) return;
     setStatusMsg(null);
 
     if (!session) {
@@ -333,6 +335,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
         setStatusMsg({ type: 'error', text: res.error });
       } else {
         setStatusMsg({ type: 'success', text: 'Bracket predictions saved successfully!' });
+        setHasSubmitted(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         router.refresh();
       }
@@ -384,35 +387,37 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
   return (
     <div className="flex flex-col gap-6">
       {/* Top Banner with Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            🎯 Build Your World Cup Bracket
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Predict scores, toggle penalty shootouts on ties, and click team rows to select advancing winners.
-          </p>
-        </div>
+      {!hasSubmitted && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              🎯 Build Your World Cup Bracket
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Predict scores, toggle penalty shootouts on ties, and click team rows to select advancing winners.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-3">
-          {session ? (
-            <button
-              onClick={handleSave}
-              disabled={isPending}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98] w-full md:w-auto"
-            >
-              {isPending ? 'Saving predictions...' : 'Save Predictions'}
-            </button>
-          ) : (
-            <button
-              onClick={() => router.push('/login')}
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 w-full md:w-auto shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
-            >
-              Log In to Save Bracket
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {session ? (
+              <button
+                onClick={handleSave}
+                disabled={isPending}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98] w-full md:w-auto"
+              >
+                {isPending ? 'Saving predictions...' : 'Save Predictions'}
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/login')}
+                className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 w-full md:w-auto shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
+              >
+                Log In to Save Bracket
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {statusMsg && (
         <div

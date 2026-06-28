@@ -76,10 +76,16 @@ const testPredictions = [
 ];
 
 async function main() {
-  const user = await prisma.user.findFirst();
+  let user = await prisma.user.findFirst();
   if (!user) {
-    console.error('No user found in DB. Please sign up a user first.');
-    return;
+    console.log('No user found, creating testing user: insen');
+    user = await prisma.user.create({
+      data: {
+        username: 'insen',
+        password: '$2b$10$FBel8xh/AAbmLDv1.nlBH.R1euucvvtqW.Y0HMLIpHTt.PskWiuUG', // 'password' hashed
+        totalPoints: 0
+      }
+    });
   }
 
   console.log(`Setting up mixed predictions for user: ${user.username}`);

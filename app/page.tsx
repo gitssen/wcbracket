@@ -28,6 +28,10 @@ export default async function Home() {
     });
   }
 
+  console.log('--- ROOT PAGE REQUEST ---');
+  console.log('Session user:', session?.user);
+  console.log('Loaded predictions count:', predictions.length);
+
   // Map database model fields to predictions array
   const formattedPredictions = predictions.map((p) => ({
     matchId: p.matchId,
@@ -58,7 +62,11 @@ export default async function Home() {
 
   return (
     <div className="py-2 w-full max-w-[200rem] mx-auto px-4 sm:px-8 lg:px-12">
-      <BracketPredictor initialMatches={formattedMatches} initialPredictions={formattedPredictions} />
+      <BracketPredictor 
+        key={(session.user as any).id}
+        initialMatches={formattedMatches} 
+        initialPredictions={formattedPredictions} 
+      />
     </div>
   );
 }
