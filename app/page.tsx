@@ -1,12 +1,17 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { redirect } from 'next/navigation';
 import BracketPredictor from '@/components/BracketPredictor';
 
 export const revalidate = 0; // Disable server cache to ensure fresh state
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect('/signup');
+  }
 
   // Fetch all matches from the database sorted by ID
   const matches = await prisma.match.findMany({

@@ -666,7 +666,19 @@ function MatchCard({ match, prediction, isBusted, onChange, renderFlag }: MatchC
     
     if (predWinner !== actualWinner) return 0;
     
-    let points = 1;
+    let points = 0;
+    if (match.round === 'ROUND_OF_32') {
+      points = 1;
+    } else if (match.round === 'ROUND_OF_16') {
+      points = 2;
+    } else if (match.round === 'QUARTER_FINALS') {
+      points = 4;
+    } else if (match.round === 'SEMI_FINALS') {
+      points = 8;
+    } else if (match.round === 'FINALS') {
+      points = 16;
+    }
+
     const isExactScore = 
       prediction.predictedHomeScore === match.homeScore &&
       prediction.predictedAwayScore === match.awayScore &&
@@ -692,17 +704,15 @@ function MatchCard({ match, prediction, isBusted, onChange, renderFlag }: MatchC
         <div className="flex items-center gap-1.5">
           {pointsEarned !== null && (
             <>
-              {pointsEarned === 2 && (
-                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[8px] font-black uppercase tracking-wider">
-                  +2 PTS (Perfect)
+              {pointsEarned > 0 ? (
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${
+                  match.round === 'ROUND_OF_32' && pointsEarned === 2
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                }`}>
+                  +{pointsEarned} PTS {match.round === 'ROUND_OF_32' && pointsEarned === 2 ? '(Perfect)' : ''}
                 </span>
-              )}
-              {pointsEarned === 1 && (
-                <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[8px] font-black uppercase tracking-wider">
-                  +1 PTS
-                </span>
-              )}
-              {pointsEarned === 0 && (
+              ) : (
                 <span className="px-1.5 py-0.5 rounded bg-slate-800/60 text-slate-500 border border-slate-800 text-[8px] font-bold uppercase tracking-wider">
                   +0 PTS
                 </span>

@@ -40,14 +40,23 @@ export async function runScoringEngine() {
           continue;
         }
 
-        // Rule 1: Correct advancing team (winner code matches)
+        // Calculate points based on new rules
         const predictedWinnerCode = prediction.predictedWinnerCode?.toUpperCase().trim();
         const actualWinnerCode = match.actualWinnerCode?.toUpperCase().trim();
 
         if (predictedWinnerCode && actualWinnerCode && predictedWinnerCode === actualWinnerCode) {
-          points += 1;
+          if (match.round === 'ROUND_OF_32') {
+            points += 1;
+          } else if (match.round === 'ROUND_OF_16') {
+            points += 2;
+          } else if (match.round === 'QUARTER_FINALS') {
+            points += 4;
+          } else if (match.round === 'SEMI_FINALS') {
+            points += 8;
+          } else if (match.round === 'FINALS') {
+            points += 16;
+          }
 
-          // Rule 2: Perfect scoreline AND penalty state match
           const scorelineMatches =
             prediction.predictedHomeScore === match.homeScore &&
             prediction.predictedAwayScore === match.awayScore;
