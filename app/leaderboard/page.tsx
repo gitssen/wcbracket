@@ -8,6 +8,17 @@ export const revalidate = 0; // Disable caching for real-time points
 export default async function LeaderboardPage() {
   const session = await getServerSession(authOptions);
   const currentUsername = session?.user?.name || null;
+  const currentUserId = (session?.user as any)?.id || null;
+
+  // Fetch current user's submission status
+  let viewerHasSubmitted = false;
+  if (currentUserId) {
+    const viewer = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { hasSubmitted: true },
+    });
+    viewerHasSubmitted = viewer?.hasSubmitted ?? false;
+  }
 
   // Query users from database ordered by totalPoints descending
   const users = await prisma.user.findMany({
@@ -15,6 +26,7 @@ export default async function LeaderboardPage() {
       id: true,
       username: true,
       totalPoints: true,
+      hasSubmitted: true,
     },
     orderBy: {
       totalPoints: 'desc',
@@ -101,12 +113,15 @@ export default async function LeaderboardPage() {
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Score Aggregate
                 </th>
+                <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Bracket
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 bg-transparent">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-10 text-center text-slate-500">
+                  <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
                     No predictors have signed up yet. Be the first!
                   </td>
                 </tr>
@@ -148,6 +163,29 @@ export default async function LeaderboardPage() {
                         <span className={`font-extrabold text-sm ${isCurrentUser ? 'text-emerald-300' : 'text-emerald-400'}`}>
                           {user.totalPoints} PTS
                         </span>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-center">
+                        {!currentUserId ? (
+                          <span className="text-xs text-slate-600">Log in to view</span>
+                        ) : !viewerHasSubmitted ? (
+                          <span className="text-xs text-slate-500">Lock yours first</span>
+                        ) : !user.hasSubmitted ? (
+                          <span className="text-xs text-slate-600">Pending</span>
+                        ) : isCurrentUser ? (
+                          <a
+                            href="/"
+                            className="inline-flex items-center px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors"
+                          >
+                            Your Bracket
+                          </a>
+                        ) : (
+                          <a
+                            href={`/bracket/${user.id}`}
+                            className="inline-flex items-center px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-colors"
+                          >
+                            View
+                          </a>
+                        )}
                       </td>
                     </tr>
                   );

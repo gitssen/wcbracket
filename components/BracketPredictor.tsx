@@ -36,6 +36,8 @@ interface BracketPredictorProps {
   initialMatches: Match[];
   initialPredictions: Prediction[];
   isLocked: boolean;
+  viewOnly?: boolean;
+  viewingUsername?: string;
 }
 
 const ROUND_LABELS: Record<string, string> = {
@@ -46,7 +48,7 @@ const ROUND_LABELS: Record<string, string> = {
   FINALS: 'Final',
 };
 
-export default function BracketPredictor({ initialMatches, initialPredictions, isLocked }: BracketPredictorProps) {
+export default function BracketPredictor({ initialMatches, initialPredictions, isLocked, viewOnly, viewingUsername }: BracketPredictorProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -395,8 +397,29 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
 
   return (
     <div className="flex flex-col gap-6">
+      {/* View-Only Banner */}
+      {viewOnly && viewingUsername && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-950/40 border border-blue-500/30 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <span className="text-lg">👁️</span>
+            <div>
+              <h2 className="text-lg font-bold text-blue-200">
+                Viewing {viewingUsername}&apos;s Bracket
+              </h2>
+              <p className="text-xs text-blue-400/70">Read-only view of their locked predictions</p>
+            </div>
+          </div>
+          <a
+            href="/leaderboard"
+            className="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-sm font-semibold hover:bg-slate-700 transition-colors"
+          >
+            Back to Leaderboard
+          </a>
+        </div>
+      )}
+
       {/* Top Banner with Actions */}
-      {!hasSubmitted && (
+      {!hasSubmitted && !viewOnly && (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">

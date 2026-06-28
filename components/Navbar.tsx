@@ -52,6 +52,16 @@ export default function Navbar({ user }: NavbarProps) {
             >
               Leaderboard
             </Link>
+            <Link
+              href="/rules"
+              className={`px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${
+                isActive('/rules')
+                  ? 'text-emerald-400 bg-emerald-950/30 border border-emerald-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              Rules
+            </Link>
           </div>
 
           {/* User Auth Section */}
@@ -115,6 +125,15 @@ export default function Navbar({ user }: NavbarProps) {
         >
           <span>📊</span>
           <span>Leaderboard</span>
+        </Link>
+        <Link
+          href="/rules"
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium transition-colors ${
+            isActive('/rules') ? 'text-emerald-400' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <span>📋</span>
+          <span>Rules</span>
         </Link>
       </div>
     </nav>
