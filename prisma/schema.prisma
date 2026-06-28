@@ -9,11 +9,12 @@ generator client {
 }
 
 model User {
-  id          String       @id @default(cuid())
-  username    String       @unique
-  password    String
-  totalPoints Int          @default(0)
-  predictions Prediction[]
+  id           String       @id @default(cuid())
+  username     String       @unique
+  password     String
+  totalPoints  Int          @default(0)
+  hasSubmitted Boolean      @default(false)
+  predictions  Prediction[]
 }
 
 model Match {

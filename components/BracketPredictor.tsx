@@ -35,6 +35,7 @@ interface Prediction {
 interface BracketPredictorProps {
   initialMatches: Match[];
   initialPredictions: Prediction[];
+  isLocked: boolean;
 }
 
 const ROUND_LABELS: Record<string, string> = {
@@ -45,11 +46,12 @@ const ROUND_LABELS: Record<string, string> = {
   FINALS: 'Final',
 };
 
-export default function BracketPredictor({ initialMatches, initialPredictions }: BracketPredictorProps) {
+export default function BracketPredictor({ initialMatches, initialPredictions, isLocked }: BracketPredictorProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [hasSubmitted, setHasSubmitted] = useState(initialPredictions.length > 0);
+  const [hasSubmitted, setHasSubmitted] = useState(isLocked);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // State for active bracket matches (with updated slots as teams advance)
   const [matches, setMatches] = useState<Match[]>(() => {
@@ -318,8 +320,13 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
       return;
     }
 
+    setShowConfirmDialog(true);
+  };
+
+  const confirmSave = () => {
+    setShowConfirmDialog(false);
+
     startTransition(async () => {
-      // Map predictions into format expected by server action
       const listToSave: PredictionInput[] = Object.values(predictions).map((p) => ({
         matchId: p.matchId,
         predictedWinner: p.predictedWinner,
@@ -415,6 +422,32 @@ export default function BracketPredictor({ initialMatches, initialPredictions }:
                 Log In to Save Bracket
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">Confirm Submission</h3>
+            <p className="text-sm text-slate-400 mb-6">
+              Are you sure? Predictions cannot be changed after submission.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-sm font-semibold hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSave}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold transition-colors"
+              >
+                Confirm & Lock
+              </button>
+            </div>
           </div>
         </div>
       )}

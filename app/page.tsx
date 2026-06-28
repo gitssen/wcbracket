@@ -18,14 +18,21 @@ export default async function Home() {
     orderBy: { id: 'asc' },
   });
 
-  // Fetch user predictions if logged in
+  // Fetch user predictions and lock status if logged in
   let predictions: any[] = [];
+  let isLocked = false;
   if (session?.user && (session.user as any).id) {
-    predictions = await prisma.prediction.findMany({
-      where: {
-        userId: (session.user as any).id,
-      },
-    });
+    const [userPredictions, user] = await Promise.all([
+      prisma.prediction.findMany({
+        where: { userId: (session.user as any).id },
+      }),
+      prisma.user.findUnique({
+        where: { id: (session.user as any).id },
+        select: { hasSubmitted: true },
+      }),
+    ]);
+    predictions = userPredictions;
+    isLocked = user?.hasSubmitted ?? false;
   }
 
   console.log('--- ROOT PAGE REQUEST ---');
@@ -62,10 +69,11 @@ export default async function Home() {
 
   return (
     <div className="py-2 w-full max-w-[200rem] mx-auto px-4 sm:px-8 lg:px-12">
-      <BracketPredictor 
+      <BracketPredictor
         key={(session.user as any).id}
-        initialMatches={formattedMatches} 
-        initialPredictions={formattedPredictions} 
+        initialMatches={formattedMatches}
+        initialPredictions={formattedPredictions}
+        isLocked={isLocked}
       />
     </div>
   );

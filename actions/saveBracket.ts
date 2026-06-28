@@ -24,9 +24,15 @@ export async function saveBracket(predictions: PredictionInput[]) {
   const userId = (session.user as any).id;
 
   try {
-    // Perform bulk upserts using a transaction
-    await prisma.$transaction(
-      predictions.map((pred) =>
+    // Check if user has already submitted
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user?.hasSubmitted) {
+      return { error: 'Predictions are locked. You have already submitted your bracket.' };
+    }
+
+    // Perform bulk upserts and lock the bracket in a transaction
+    await prisma.$transaction([
+      ...predictions.map((pred) =>
         prisma.prediction.upsert({
           where: {
             userId_matchId: {
@@ -51,8 +57,12 @@ export async function saveBracket(predictions: PredictionInput[]) {
             predictPenalties: pred.predictPenalties,
           },
         })
-      )
-    );
+      ),
+      prisma.user.update({
+        where: { id: userId },
+        data: { hasSubmitted: true },
+      }),
+    ]);
 
     revalidatePath('/');
     revalidatePath('/leaderboard');
