@@ -16,24 +16,24 @@ const prisma = new PrismaClient({ adapter });
 const initialMatches = [
   // Round of 32 (Matches 1 to 16)
   // LEFT HALF of bracket
-  { id: 1, round: "ROUND_OF_32", homeTeam: "Germany", homeCode: "DE", awayTeam: "Paraguay", awayCode: "PY", nextMatchId: 17, isHomeInNext: true },     // M74 → M89
-  { id: 2, round: "ROUND_OF_32", homeTeam: "France", homeCode: "FR", awayTeam: "Sweden", awayCode: "SE", nextMatchId: 17, isHomeInNext: false },        // M77 → M89
-  { id: 3, round: "ROUND_OF_32", homeTeam: "South Africa", homeCode: "ZA", awayTeam: "Canada", awayCode: "CA", nextMatchId: 18, isHomeInNext: true },   // M73 → M90
-  { id: 4, round: "ROUND_OF_32", homeTeam: "Netherlands", homeCode: "NL", awayTeam: "Morocco", awayCode: "MA", nextMatchId: 18, isHomeInNext: false },  // M75 → M90
-  { id: 5, round: "ROUND_OF_32", homeTeam: "Portugal", homeCode: "PT", awayTeam: "Croatia", awayCode: "HR", nextMatchId: 19, isHomeInNext: true },      // M83 → M93
-  { id: 6, round: "ROUND_OF_32", homeTeam: "Spain", homeCode: "ES", awayTeam: "Austria", awayCode: "AT", nextMatchId: 19, isHomeInNext: false },        // M84 → M93
-  { id: 7, round: "ROUND_OF_32", homeTeam: "USA", homeCode: "US", awayTeam: "Bosnia-Herzegovina", awayCode: "BA", nextMatchId: 20, isHomeInNext: true },// M81 → M94
-  { id: 8, round: "ROUND_OF_32", homeTeam: "Belgium", homeCode: "BE", awayTeam: "Senegal", awayCode: "SN", nextMatchId: 20, isHomeInNext: false },      // M82 → M94
+  { id: 1, round: "ROUND_OF_32", homeTeam: "Germany", homeCode: "GER", awayTeam: "Paraguay", awayCode: "PAR", nextMatchId: 17, isHomeInNext: true },
+  { id: 2, round: "ROUND_OF_32", homeTeam: "France", homeCode: "FRA", awayTeam: "Sweden", awayCode: "SWE", nextMatchId: 17, isHomeInNext: false },
+  { id: 3, round: "ROUND_OF_32", homeTeam: "South Africa", homeCode: "RSA", awayTeam: "Canada", awayCode: "CAN", nextMatchId: 18, isHomeInNext: true },
+  { id: 4, round: "ROUND_OF_32", homeTeam: "Netherlands", homeCode: "NED", awayTeam: "Morocco", awayCode: "MAR", nextMatchId: 18, isHomeInNext: false },
+  { id: 5, round: "ROUND_OF_32", homeTeam: "Portugal", homeCode: "POR", awayTeam: "Croatia", awayCode: "CRO", nextMatchId: 19, isHomeInNext: true },
+  { id: 6, round: "ROUND_OF_32", homeTeam: "Spain", homeCode: "ESP", awayTeam: "Austria", awayCode: "AUT", nextMatchId: 19, isHomeInNext: false },
+  { id: 7, round: "ROUND_OF_32", homeTeam: "USA", homeCode: "USA", awayTeam: "Bosnia-Herzegovina", awayCode: "BIH", nextMatchId: 20, isHomeInNext: true },
+  { id: 8, round: "ROUND_OF_32", homeTeam: "Belgium", homeCode: "BEL", awayTeam: "Senegal", awayCode: "SEN", nextMatchId: 20, isHomeInNext: false },
 
   // RIGHT HALF of bracket
-  { id: 9, round: "ROUND_OF_32", homeTeam: "Brazil", homeCode: "BR", awayTeam: "Japan", awayCode: "JP", nextMatchId: 21, isHomeInNext: true },          // M76 → M91
-  { id: 10, round: "ROUND_OF_32", homeTeam: "Ivory Coast", homeCode: "CI", awayTeam: "Norway", awayCode: "NO", nextMatchId: 21, isHomeInNext: false },   // M78 → M91
-  { id: 11, round: "ROUND_OF_32", homeTeam: "Mexico", homeCode: "MX", awayTeam: "Ecuador", awayCode: "EC", nextMatchId: 22, isHomeInNext: true },        // M79 → M92
-  { id: 12, round: "ROUND_OF_32", homeTeam: "England", homeCode: "GB", awayTeam: "DR Congo", awayCode: "CD", nextMatchId: 22, isHomeInNext: false },     // M80 → M92
-  { id: 13, round: "ROUND_OF_32", homeTeam: "Argentina", homeCode: "AR", awayTeam: "Cape Verde", awayCode: "CV", nextMatchId: 23, isHomeInNext: true },   // M86 → M95
-  { id: 14, round: "ROUND_OF_32", homeTeam: "Australia", homeCode: "AU", awayTeam: "Egypt", awayCode: "EG", nextMatchId: 23, isHomeInNext: false },       // M88 → M95
-  { id: 15, round: "ROUND_OF_32", homeTeam: "Switzerland", homeCode: "CH", awayTeam: "Algeria", awayCode: "DZ", nextMatchId: 24, isHomeInNext: true },    // M85 → M96
-  { id: 16, round: "ROUND_OF_32", homeTeam: "Colombia", homeCode: "CO", awayTeam: "Ghana", awayCode: "GH", nextMatchId: 24, isHomeInNext: false },       // M87 → M96
+  { id: 9, round: "ROUND_OF_32", homeTeam: "Brazil", homeCode: "BRA", awayTeam: "Japan", awayCode: "JPN", nextMatchId: 21, isHomeInNext: true },
+  { id: 10, round: "ROUND_OF_32", homeTeam: "Ivory Coast", homeCode: "CIV", awayTeam: "Norway", awayCode: "NOR", nextMatchId: 21, isHomeInNext: false },
+  { id: 11, round: "ROUND_OF_32", homeTeam: "Mexico", homeCode: "MEX", awayTeam: "Ecuador", awayCode: "ECU", nextMatchId: 22, isHomeInNext: true },
+  { id: 12, round: "ROUND_OF_32", homeTeam: "England", homeCode: "ENG", awayTeam: "DR Congo", awayCode: "COD", nextMatchId: 22, isHomeInNext: false },
+  { id: 13, round: "ROUND_OF_32", homeTeam: "Argentina", homeCode: "ARG", awayTeam: "Cape Verde", awayCode: "CPV", nextMatchId: 23, isHomeInNext: true },
+  { id: 14, round: "ROUND_OF_32", homeTeam: "Australia", homeCode: "AUS", awayTeam: "Egypt", awayCode: "EGY", nextMatchId: 23, isHomeInNext: false },
+  { id: 15, round: "ROUND_OF_32", homeTeam: "Switzerland", homeCode: "SUI", awayTeam: "Algeria", awayCode: "ALG", nextMatchId: 24, isHomeInNext: true },
+  { id: 16, round: "ROUND_OF_32", homeTeam: "Colombia", homeCode: "COL", awayTeam: "Ghana", awayCode: "GHA", nextMatchId: 24, isHomeInNext: false },
 
   // Round of 16 (Matches 17 to 24)
   // LEFT HALF

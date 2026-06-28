@@ -30,6 +30,7 @@ model Match {
   actualWinner     String?
   actualWinnerCode String?
   isCompleted      Boolean      @default(false)
+  kickoffTime      String?
   nextMatchId      Int?
   isHomeInNext     Boolean
   predictions      Prediction[]

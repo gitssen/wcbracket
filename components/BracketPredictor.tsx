@@ -5,6 +5,7 @@ import Flag from 'react-world-flags';
 import { useSession } from 'next-auth/react';
 import { saveBracket, PredictionInput } from '@/actions/saveBracket';
 import { useRouter } from 'next/navigation';
+import { getIsoCode } from '@/lib/teamCodeMap';
 
 interface Match {
   id: number;
@@ -19,6 +20,7 @@ interface Match {
   actualWinner: string | null;
   actualWinnerCode: string | null;
   isCompleted: boolean;
+  kickoffTime?: string | null;
   nextMatchId: number | null;
   isHomeInNext: boolean;
 }
@@ -47,6 +49,53 @@ const ROUND_LABELS: Record<string, string> = {
   SEMI_FINALS: 'Semi-Finals',
   FINALS: 'Final',
 };
+
+interface BracketConnection {
+  fromMatchId: number;
+  toMatchId: number;
+  wing: 'left' | 'right';
+}
+
+const BRACKET_CONNECTIONS: BracketConnection[] = [
+  // Left wing: R32 → R16
+  { fromMatchId: 1, toMatchId: 17, wing: 'left' },
+  { fromMatchId: 2, toMatchId: 17, wing: 'left' },
+  { fromMatchId: 3, toMatchId: 18, wing: 'left' },
+  { fromMatchId: 4, toMatchId: 18, wing: 'left' },
+  { fromMatchId: 5, toMatchId: 19, wing: 'left' },
+  { fromMatchId: 6, toMatchId: 19, wing: 'left' },
+  { fromMatchId: 7, toMatchId: 20, wing: 'left' },
+  { fromMatchId: 8, toMatchId: 20, wing: 'left' },
+  // Left wing: R16 → QF
+  { fromMatchId: 17, toMatchId: 25, wing: 'left' },
+  { fromMatchId: 18, toMatchId: 25, wing: 'left' },
+  { fromMatchId: 19, toMatchId: 26, wing: 'left' },
+  { fromMatchId: 20, toMatchId: 26, wing: 'left' },
+  // Left wing: QF → SF
+  { fromMatchId: 25, toMatchId: 29, wing: 'left' },
+  { fromMatchId: 26, toMatchId: 29, wing: 'left' },
+  // Left wing: SF → F
+  { fromMatchId: 29, toMatchId: 31, wing: 'left' },
+  // Right wing: R32 → R16
+  { fromMatchId: 9, toMatchId: 21, wing: 'right' },
+  { fromMatchId: 10, toMatchId: 21, wing: 'right' },
+  { fromMatchId: 11, toMatchId: 22, wing: 'right' },
+  { fromMatchId: 12, toMatchId: 22, wing: 'right' },
+  { fromMatchId: 13, toMatchId: 23, wing: 'right' },
+  { fromMatchId: 14, toMatchId: 23, wing: 'right' },
+  { fromMatchId: 15, toMatchId: 24, wing: 'right' },
+  { fromMatchId: 16, toMatchId: 24, wing: 'right' },
+  // Right wing: R16 → QF
+  { fromMatchId: 21, toMatchId: 27, wing: 'right' },
+  { fromMatchId: 22, toMatchId: 27, wing: 'right' },
+  { fromMatchId: 23, toMatchId: 28, wing: 'right' },
+  { fromMatchId: 24, toMatchId: 28, wing: 'right' },
+  // Right wing: QF → SF
+  { fromMatchId: 27, toMatchId: 30, wing: 'right' },
+  { fromMatchId: 28, toMatchId: 30, wing: 'right' },
+  // Right wing: SF → F
+  { fromMatchId: 30, toMatchId: 31, wing: 'right' },
+];
 
 export default function BracketPredictor({ initialMatches, initialPredictions, isLocked, viewOnly, viewingUsername }: BracketPredictorProps) {
   const { data: session } = useSession();
@@ -93,6 +142,19 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
     for (const pred of initialPredictions) {
       map[pred.matchId] = pred;
     }
+    // Auto-fill predictions for completed matches with actual results
+    for (const m of initialMatches) {
+      if (m.isCompleted && m.actualWinnerCode && !map[m.id]) {
+        map[m.id] = {
+          matchId: m.id,
+          predictedWinner: m.actualWinner || '',
+          predictedWinnerCode: m.actualWinnerCode,
+          predictedHomeScore: m.homeScore ?? 0,
+          predictedAwayScore: m.awayScore ?? 0,
+          predictPenalties: m.wentToPenalties,
+        };
+      }
+    }
     return map;
   });
 
@@ -100,6 +162,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
   const [activeMobileRound, setActiveMobileRound] = useState<string>('ROUND_OF_32');
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const bracketContainerRef = useRef<HTMLDivElement>(null);
 
   // Helper to render flag SVG
   const renderFlag = (code: string) => {
@@ -110,9 +173,10 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
         </div>
       );
     }
+    const isoCode = getIsoCode(code);
     return (
       <Flag
-        code={code}
+        code={isoCode}
         className="w-6 h-4 object-cover rounded-sm shadow-sm border border-slate-800/40"
         fallback={
           <div className="w-6 h-4 bg-slate-800 border border-slate-700 flex items-center justify-center rounded-sm text-[9px] text-slate-500">
@@ -313,6 +377,13 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
 
   const isChampionBusted = !!(champion && !champion.isReal && eliminatedTeams.has(champion.code.toUpperCase()));
 
+  // Check if bracket is complete (all 31 matches have a predicted winner)
+  const bracketComplete = matches.every((m) => {
+    if (m.isCompleted) return true;
+    const pred = predictions[m.id];
+    return pred && pred.predictedWinnerCode && pred.predictedWinnerCode.trim() !== '';
+  });
+
   // Save changes to DB
   const handleSave = () => {
     if (hasSubmitted) return;
@@ -320,6 +391,11 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
 
     if (!session) {
       router.push('/login');
+      return;
+    }
+
+    if (!bracketComplete) {
+      setStatusMsg({ type: 'error', text: 'Complete your entire bracket (all rounds through the Final) before saving.' });
       return;
     }
 
@@ -353,7 +429,13 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
   };
 
   // Group matches by round for display
-  const getRoundMatches = (round: string) => matches.filter((m) => m.round === round);
+  const getRoundMatches = (round: string) =>
+    matches.filter((m) => m.round === round).sort((a, b) => {
+      if (a.kickoffTime && b.kickoffTime) return new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime();
+      if (a.kickoffTime) return -1;
+      if (b.kickoffTime) return 1;
+      return a.id - b.id;
+    });
 
   const rounds = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'FINALS'];
 
@@ -362,7 +444,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
 
   const renderDesktopColumn = (title: string, columnMatches: Match[]) => {
     return (
-      <div className="flex-1 min-w-[240px] max-w-[280px] flex flex-col justify-around h-full">
+      <div className="relative z-10 flex-1 min-w-[240px] max-w-[280px] flex flex-col justify-around h-full">
         <div className="text-center py-1.5 bg-slate-900/40 border border-slate-800/80 rounded-xl">
           <h3 className="font-extrabold text-xs text-slate-300 tracking-wider uppercase">
             {title}
@@ -434,10 +516,14 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
             {session ? (
               <button
                 onClick={handleSave}
-                disabled={isPending}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98] w-full md:w-auto"
+                disabled={isPending || !bracketComplete}
+                className={`px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none w-full md:w-auto active:scale-[0.98] ${
+                  bracketComplete
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20'
+                    : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                }`}
               >
-                {isPending ? 'Saving predictions...' : 'Save Predictions'}
+                {isPending ? 'Saving predictions...' : bracketComplete ? 'Save Predictions' : 'Complete Bracket to Save'}
               </button>
             ) : (
               <button
@@ -548,8 +634,14 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
         </div>
 
         {/* Desktop Symmetrical Bracket */}
-        <div className="hidden md:block overflow-x-auto pb-8" style={{ height: `${1100 * zoomLevel}px` }}>
-        <div className="flex flex-row gap-4 h-[1100px] select-none" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left', width: `${100 / zoomLevel}%` }}>
+        <div className="hidden md:block overflow-x-auto pb-8" style={{ height: `${1600 * zoomLevel}px` }}>
+        <div ref={bracketContainerRef} className="relative flex flex-row gap-4 h-[1600px] select-none" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left', width: `${100 / zoomLevel}%` }}>
+          <BracketConnectors
+            containerRef={bracketContainerRef}
+            connections={BRACKET_CONNECTIONS}
+            predictions={predictions}
+            zoomLevel={zoomLevel}
+          />
           {/* LEFT WING */}
           {/* Column 1: Round of 32 Left */}
           {renderDesktopColumn('Round of 32', getMatchesByIds([1, 2, 3, 4, 5, 6, 7, 8]))}
@@ -561,7 +653,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
           {renderDesktopColumn('Semi-Finals', getMatchesByIds([29]))}
 
           {/* CENTER: Finals & Champion */}
-          <div className="flex-1 min-w-[280px] max-w-[320px] flex flex-col justify-center gap-12 h-full items-center">
+          <div className="relative z-10 flex-1 min-w-[280px] max-w-[320px] flex flex-col justify-center gap-12 h-full items-center">
             {/* Champion Showcase at top of center */}
             <div className="w-full flex flex-col items-center">
               <div className="text-center w-full py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-3">
@@ -698,6 +790,110 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
   );
 }
 
+interface BracketConnectorsProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  connections: BracketConnection[];
+  predictions: Record<number, Prediction>;
+  zoomLevel: number;
+}
+
+function BracketConnectors({ containerRef, connections, predictions, zoomLevel }: BracketConnectorsProps) {
+  const [paths, setPaths] = useState<{ d: string; color: string }[]>([]);
+
+  const calculatePaths = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const scale = zoomLevel;
+
+    const newPaths: { d: string; color: string }[] = [];
+
+    for (const conn of connections) {
+      const fromEl = container.querySelector(`[data-match-id="${conn.fromMatchId}"]`);
+      const toEl = container.querySelector(`[data-match-id="${conn.toMatchId}"]`);
+      if (!fromEl || !toEl) continue;
+
+      const fromRect = fromEl.getBoundingClientRect();
+      const toRect = toEl.getBoundingClientRect();
+
+      // Convert to container-relative coordinates, compensating for CSS scale
+      let fromX: number, toX: number;
+
+      if (conn.wing === 'left') {
+        fromX = (fromRect.right - containerRect.left) / scale;
+        toX = (toRect.left - containerRect.left) / scale;
+      } else {
+        fromX = (fromRect.left - containerRect.left) / scale;
+        toX = (toRect.right - containerRect.left) / scale;
+      }
+
+      const fromY = (fromRect.top + fromRect.height / 2 - containerRect.top) / scale;
+      const toY = (toRect.top + toRect.height / 2 - containerRect.top) / scale;
+
+      const midX = (fromX + toX) / 2;
+      const r = 6; // corner radius
+
+      let d: string;
+      if (Math.abs(fromY - toY) < 1) {
+        // Straight horizontal line
+        d = `M ${fromX} ${fromY} L ${toX} ${toY}`;
+      } else {
+        // Path with rounded corners: horizontal → vertical → horizontal
+        const dirY = toY > fromY ? 1 : -1;
+
+        d = `M ${fromX} ${fromY} L ${midX - r} ${fromY} Q ${midX} ${fromY} ${midX} ${fromY + r * dirY} L ${midX} ${toY - r * dirY} Q ${midX} ${toY} ${midX + (conn.wing === 'left' ? r : -r)} ${toY} L ${toX} ${toY}`;
+      }
+
+      const hasPrediction = !!predictions[conn.fromMatchId]?.predictedWinnerCode;
+      const color = hasPrediction
+        ? 'rgba(16, 185, 129, 0.6)'  // emerald-500/60
+        : 'rgba(100, 116, 139, 0.5)'; // slate-500/50
+
+      newPaths.push({ d, color });
+    }
+
+    setPaths(newPaths);
+  }, [containerRef, connections, predictions, zoomLevel]);
+
+  useEffect(() => {
+    // Calculate after paint
+    const raf = requestAnimationFrame(() => {
+      calculatePaths();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [calculatePaths]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      requestAnimationFrame(calculatePaths);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [calculatePaths]);
+
+  if (paths.length === 0) return null;
+
+  return (
+    <svg
+      className="absolute inset-0 z-0 pointer-events-none"
+      width="100%"
+      height="100%"
+      style={{ overflow: 'visible' }}
+    >
+      {paths.map((p, i) => (
+        <path
+          key={i}
+          d={p.d}
+          fill="none"
+          stroke={p.color}
+          strokeWidth={2}
+        />
+      ))}
+    </svg>
+  );
+}
+
 interface MatchCardProps {
   match: Match;
   prediction?: Prediction;
@@ -783,14 +979,25 @@ function MatchCard({ match, prediction, isBusted, isLocked, onChange, renderFlag
   const pointsEarned = getPointsEarned();
 
   return (
-    <div className={`border rounded-xl p-3.5 hover:border-slate-700/80 transition-all duration-300 flex flex-col gap-2.5 shadow-sm shadow-slate-950/20 ${
-      isBusted 
+    <div data-match-id={match.id} className={`border rounded-xl p-3.5 hover:border-slate-700/80 transition-all duration-300 flex flex-col gap-2.5 shadow-sm shadow-slate-950/20 ${
+      isBusted
         ? 'opacity-40 grayscale border-slate-950 bg-slate-950/20 hover:border-slate-950'
         : 'bg-slate-900/50 border-slate-800/80'
     }`}>
       {/* Match Header */}
       <div className="flex items-center justify-between border-b border-slate-800/40 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-        <span>Match {match.id}</span>
+        <div className="flex items-center gap-1.5">
+          <span>Match {match.id}</span>
+          {match.kickoffTime && !match.isCompleted && (
+            <span className="normal-case text-slate-400 font-medium tracking-normal">
+              {new Intl.DateTimeFormat('en-US', {
+                month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+                timeZone: 'America/Los_Angeles',
+              }).format(new Date(match.kickoffTime))} PT
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
           {pointsEarned !== null && (
             <>

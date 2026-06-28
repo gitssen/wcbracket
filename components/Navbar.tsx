@@ -62,6 +62,16 @@ export default function Navbar({ user }: NavbarProps) {
             >
               Rules
             </Link>
+            <Link
+              href="/games"
+              className={`px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${
+                isActive('/games')
+                  ? 'text-emerald-400 bg-emerald-950/30 border border-emerald-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              Games
+            </Link>
           </div>
 
           {/* User Auth Section */}
@@ -134,6 +144,15 @@ export default function Navbar({ user }: NavbarProps) {
         >
           <span>📋</span>
           <span>Rules</span>
+        </Link>
+        <Link
+          href="/games"
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium transition-colors ${
+            isActive('/games') ? 'text-emerald-400' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <span>🏟️</span>
+          <span>Games</span>
         </Link>
       </div>
     </nav>
