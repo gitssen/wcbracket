@@ -29,6 +29,7 @@ interface ApiMatch {
     fullTime: ApiScore;
     halfTime: ApiScore;
     regularTime: ApiScore;
+    extraTime: ApiScore;
     penalties: ApiScore;
   };
 }
@@ -88,13 +89,27 @@ export function parseMatchResult(apiMatch: ApiMatch): ParsedMatchResult | null {
   if (apiMatch.status !== 'FINISHED') return null;
 
   const { score, homeTeam, awayTeam } = apiMatch;
-  const homeScore = score.fullTime.home;
-  const awayScore = score.fullTime.away;
-
-  if (homeScore === null || awayScore === null) return null;
-
   const wentToPenalties = score.duration === 'PENALTY_SHOOTOUT';
 
+  // Determine the stored score: regulation+ET for penalty matches, fullTime otherwise
+  let homeScore: number;
+  let awayScore: number;
+
+  if (wentToPenalties) {
+    // Store the score after extra time (before penalties) for correct bonus point matching
+    const regHome = score.regularTime?.home ?? 0;
+    const regAway = score.regularTime?.away ?? 0;
+    const etHome = score.extraTime?.home ?? 0;
+    const etAway = score.extraTime?.away ?? 0;
+    homeScore = regHome + etHome;
+    awayScore = regAway + etAway;
+  } else {
+    if (score.fullTime.home === null || score.fullTime.away === null) return null;
+    homeScore = score.fullTime.home;
+    awayScore = score.fullTime.away;
+  }
+
+  // Determine winner
   let winnerTla: string;
   let winnerName: string;
   if (score.winner === 'HOME_TEAM') {
@@ -103,9 +118,16 @@ export function parseMatchResult(apiMatch: ApiMatch): ParsedMatchResult | null {
   } else if (score.winner === 'AWAY_TEAM') {
     winnerTla = awayTeam.tla;
     winnerName = awayTeam.name;
+  } else if (wentToPenalties && score.fullTime.home !== null && score.fullTime.away !== null) {
+    // API returns winner=null for penalty shootouts — infer from fullTime totals
+    if (score.fullTime.home > score.fullTime.away) {
+      winnerTla = homeTeam.tla;
+      winnerName = homeTeam.name;
+    } else {
+      winnerTla = awayTeam.tla;
+      winnerName = awayTeam.name;
+    }
   } else {
-    // Draw shouldn't happen in knockout, but handle gracefully
-    // In penalty shootouts, the winner field should be set by the API
     return null;
   }
 

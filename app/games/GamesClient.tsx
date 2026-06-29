@@ -169,7 +169,7 @@ function GameCard({ match, predictions }: { match: Match; predictions: Predictio
       {match.isCompleted && match.wentToPenalties && (
         <div className="mt-2 text-center">
           <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-            After Penalties
+            {match.actualWinnerCode} won on Penalties
           </span>
         </div>
       )}
