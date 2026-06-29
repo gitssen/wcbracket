@@ -1,6 +1,7 @@
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from './db';
+import { turso } from './turso';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: AuthOptions = {
@@ -33,6 +34,11 @@ export const authOptions: AuthOptions = {
         if (!isValid) {
           throw new Error('Incorrect password.');
         }
+
+        turso.execute({
+          sql: 'INSERT INTO ActivityLog (userId, username, action) VALUES (?, ?, ?)',
+          args: [user.id, user.username, 'login'],
+        }).catch(() => {});
 
         return {
           id: user.id,

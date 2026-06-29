@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/db';
+import { turso } from '@/lib/turso';
 import bcrypt from 'bcryptjs';
 
 export async function signupUser(formData: FormData) {
@@ -32,13 +33,18 @@ export async function signupUser(formData: FormData) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         username: normalizedUsername,
         password: hashedPassword,
         totalPoints: 0,
       },
     });
+
+    turso.execute({
+      sql: 'INSERT INTO ActivityLog (userId, username, action) VALUES (?, ?, ?)',
+      args: [newUser.id, newUser.username, 'signup'],
+    }).catch(() => {});
 
     return { success: true };
   } catch (error: any) {

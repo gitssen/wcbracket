@@ -20,6 +20,15 @@ interface Match {
   kickoffTime: string | null;
 }
 
+interface PredictionSummary {
+  username: string;
+  predictedWinner: string;
+  predictedWinnerCode: string;
+  predictedHomeScore: number;
+  predictedAwayScore: number;
+  predictPenalties: boolean;
+}
+
 const ROUND_ORDER = [
   'ROUND_OF_32',
   'ROUND_OF_16',
@@ -68,10 +77,24 @@ function RenderFlag({ code }: { code: string }) {
   );
 }
 
-function GameCard({ match }: { match: Match }) {
+function GameCard({ match, predictions }: { match: Match; predictions: PredictionSummary[] }) {
+  const [expanded, setExpanded] = useState(false);
   const isHomeWinner = match.isCompleted && match.actualWinnerCode === match.homeCode;
   const isAwayWinner = match.isCompleted && match.actualWinnerCode === match.awayCode;
   const hasTBD = !match.homeCode || !match.awayCode || match.homeTeam === 'TBD' || match.awayTeam === 'TBD';
+
+  const showPredictions = !hasTBD && predictions.length > 0;
+  const homePicks = predictions.filter((p) => p.predictedWinnerCode === match.homeCode).length;
+  const homePct = predictions.length > 0 ? Math.round((homePicks / predictions.length) * 100) : 0;
+  const awayPct = 100 - homePct;
+
+  // Most popular predicted score
+  const scoreCounts: Record<string, number> = {};
+  for (const p of predictions) {
+    const key = `${p.predictedHomeScore}-${p.predictedAwayScore}`;
+    scoreCounts[key] = (scoreCounts[key] || 0) + 1;
+  }
+  const topScore = Object.entries(scoreCounts).sort((a, b) => b[1] - a[1])[0];
 
   return (
     <div className={`rounded-xl border p-4 transition-all duration-200 ${
@@ -157,11 +180,89 @@ function GameCard({ match }: { match: Match }) {
           <span className="text-[10px] text-slate-600 italic">Teams TBD</span>
         </div>
       )}
+
+      {/* Prediction breakdown */}
+      {showPredictions && (
+        <div className="mt-3 border-t border-slate-800 pt-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full text-left group"
+          >
+            {/* Summary row */}
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] text-slate-400 group-hover:text-slate-300 transition-colors">
+                {predictions.length} prediction{predictions.length !== 1 ? 's' : ''}
+                <span className="ml-1 text-slate-600">{expanded ? '▲' : '▼'}</span>
+              </span>
+              <span className="text-[10px] text-slate-500">
+                {match.homeCode} {homePct}% — {awayPct}% {match.awayCode}
+              </span>
+            </div>
+            {/* Tug-of-war bar */}
+            <div className="flex h-1.5 rounded-full overflow-hidden bg-slate-800">
+              <div
+                className="bg-sky-500/70 transition-all duration-300"
+                style={{ width: `${homePct}%` }}
+              />
+              <div
+                className="bg-amber-500/70 transition-all duration-300"
+                style={{ width: `${awayPct}%` }}
+              />
+            </div>
+          </button>
+
+          {/* Expanded details */}
+          {expanded && (
+            <div className="mt-3 space-y-2">
+              {topScore && (
+                <div className="text-[11px] text-slate-400">
+                  Most predicted: <span className="text-white font-semibold">{topScore[0]}</span>
+                  <span className="text-slate-600 ml-1">({topScore[1]}×)</span>
+                </div>
+              )}
+              <div className="max-h-48 overflow-y-auto">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="text-slate-500 text-left border-b border-slate-800">
+                      <th className="pb-1 font-medium">User</th>
+                      <th className="pb-1 font-medium">Pick</th>
+                      <th className="pb-1 font-medium">Score</th>
+                      <th className="pb-1 font-medium text-right">PKs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {predictions
+                      .sort((a, b) => a.username.localeCompare(b.username))
+                      .map((p) => (
+                      <tr key={p.username} className="border-b border-slate-800/50">
+                        <td className="py-1 text-slate-300">{p.username}</td>
+                        <td className="py-1">
+                          <span className={`font-semibold ${
+                            p.predictedWinnerCode === match.homeCode ? 'text-sky-400' : 'text-amber-400'
+                          }`}>
+                            {p.predictedWinnerCode}
+                          </span>
+                        </td>
+                        <td className="py-1 text-slate-400 tabular-nums">
+                          {p.predictedHomeScore}-{p.predictedAwayScore}
+                        </td>
+                        <td className="py-1 text-right text-slate-500">
+                          {p.predictPenalties ? 'Yes' : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-export default function GamesClient({ matches }: { matches: Match[] }) {
+export default function GamesClient({ matches, predictionsByMatch }: { matches: Match[]; predictionsByMatch: Record<number, PredictionSummary[]> }) {
   const [activeRound, setActiveRound] = useState<string>('ROUND_OF_32');
 
   const matchesByRound = ROUND_ORDER.reduce((acc, round) => {
@@ -219,7 +320,7 @@ export default function GamesClient({ matches }: { matches: Match[] }) {
       {/* Games Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {matchesByRound[activeRound]?.map((match) => (
-          <GameCard key={match.id} match={match} />
+          <GameCard key={match.id} match={match} predictions={predictionsByMatch[match.id] || []} />
         ))}
       </div>
     </div>

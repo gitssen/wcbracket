@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { turso } from '@/lib/turso';
 import { revalidatePath } from 'next/cache';
 import { runScoringEngine } from '@/lib/scoring';
 
@@ -64,6 +65,11 @@ export async function saveBracket(predictions: PredictionInput[]) {
         data: { hasSubmitted: true },
       }),
     ]);
+
+    turso.execute({
+      sql: 'INSERT INTO ActivityLog (userId, username, action) VALUES (?, ?, ?)',
+      args: [userId, (session.user as any).username, 'bracket_lock'],
+    }).catch(() => {});
 
     // Run scoring immediately so points appear on leaderboard without waiting for cron
     try {

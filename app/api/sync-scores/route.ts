@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { runScoringEngine } from '@/lib/scoring';
 import { fetchWCMatches, parseMatchResult, parseScheduledMatch } from '@/lib/footballApi';
-import { createClient } from '@libsql/client';
-
-const turso = createClient({
-  url: process.env.TURSO_DATABASE_URL || '',
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+import { turso } from '@/lib/turso';
 
 /** Find a DB match by comparing home/away TLA codes (case-insensitive) */
 function findDbMatch(

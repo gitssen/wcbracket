@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import Navbar from '@/components/Navbar';
+import ActivityTracker from '@/components/ActivityTracker';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -41,6 +42,7 @@ export default async function RootLayout({
       <body className={`${inter.className} flex flex-col min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black`}>
         <SessionProvider>
           <Navbar user={user} />
+          <ActivityTracker />
           <main className="flex-1 w-full py-6">
             {children}
           </main>
