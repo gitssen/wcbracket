@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { Analytics } from '@vercel/analytics/react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -49,6 +50,7 @@ export default async function RootLayout({
             </div>
           </footer>
         </SessionProvider>
+        <Analytics />
       </body>
     </html>
   );

@@ -67,7 +67,7 @@ export async function saveBracket(predictions: PredictionInput[]) {
 
     // Run scoring immediately so points appear on leaderboard without waiting for cron
     try {
-      await runScoringEngine();
+      await runScoringEngine('bracket-lock');
     } catch (e) {
       console.error('Post-lock scoring failed:', e);
     }

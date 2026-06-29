@@ -1,11 +1,17 @@
 import { prisma } from './db';
+import { createClient } from '@libsql/client';
+
+const turso = createClient({
+  url: process.env.TURSO_DATABASE_URL || '',
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
 /**
  * Calculates and updates points for all users based on match results and predictions.
  * Rule 1: +1 Point for predicting the correct advancing team.
  * Rule 2: +1 Extra Point if the scoreline AND penalty state match the live result perfectly.
  */
-export async function runScoringEngine() {
+export async function runScoringEngine(trigger: string = 'cron') {
   try {
     // 1. Fetch all completed matches
     const completedMatches = await prisma.match.findMany({
@@ -67,6 +73,14 @@ export async function runScoringEngine() {
             points += 1;
           }
         }
+      }
+
+      // Log score change before updating
+      if (points !== user.totalPoints) {
+        await turso.execute({
+          sql: 'INSERT INTO ScoreLog (userId, username, previousPoints, newPoints, trigger) VALUES (?, ?, ?, ?, ?)',
+          args: [user.id, user.username, user.totalPoints, points, trigger],
+        });
       }
 
       // Update totalPoints for this user

@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Run scoring engine
-    const scoringResult = await runScoringEngine();
+    const scoringResult = await runScoringEngine('cron');
 
     // 5. Log cron run
     await turso.execute({
