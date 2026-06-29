@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { runScoringEngine } from '@/lib/scoring';
 import { fetchWCMatches, parseMatchResult, parseScheduledMatch } from '@/lib/footballApi';
+import { createClient } from '@libsql/client';
+
+const turso = createClient({
+  url: process.env.TURSO_DATABASE_URL || '',
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
 /** Find a DB match by comparing home/away TLA codes (case-insensitive) */
 function findDbMatch(
@@ -99,6 +105,12 @@ export async function GET(request: NextRequest) {
     // 4. Run scoring engine
     const scoringResult = await runScoringEngine();
 
+    // 5. Log cron run
+    await turso.execute({
+      sql: 'INSERT INTO CronLog (status, matchesUpdated, usersScored, message) VALUES (?, ?, ?, ?)',
+      args: ['success', updatedMatches.length, scoringResult?.count ?? 0, `Synced ${updatedMatches.length} matches, ${scheduledUpdated} schedules updated`],
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Scores synced and user points updated.',
@@ -108,6 +120,15 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('API sync-scores error:', error);
+
+    // Log failed cron run
+    try {
+      await turso.execute({
+        sql: 'INSERT INTO CronLog (status, message) VALUES (?, ?)',
+        args: ['error', error.message?.slice(0, 500) ?? 'Unknown error'],
+      });
+    } catch (_) {}
+
     return NextResponse.json(
       { error: 'Internal server error during sync.', details: error.message },
       { status: 500 }
