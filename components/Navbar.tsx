@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 interface NavbarProps {
   user: {
@@ -13,6 +13,11 @@ interface NavbarProps {
 
 export default function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const displayUser = user ?? (session?.user ? {
+    username: (session.user as any).username || session.user.name || '',
+    totalPoints: 0,
+  } : null);
 
   const isActive = (path: string) => pathname === path;
 
@@ -76,10 +81,10 @@ export default function Navbar({ user }: NavbarProps) {
 
           {/* User Auth Section */}
           <div className="flex items-center gap-4">
-            {user ? (
+            {displayUser ? (
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="flex flex-col items-end hidden sm:flex">
-                  <span className="text-sm font-medium text-slate-200">{user.username}</span>
+                  <span className="text-sm font-medium text-slate-200">{displayUser.username}</span>
                   <span className="text-xs text-slate-400">Predictor</span>
                 </div>
                 <div className="px-3 py-1 rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-500/10">
@@ -87,7 +92,7 @@ export default function Navbar({ user }: NavbarProps) {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  {user.totalPoints} PTS
+                  {displayUser.totalPoints} PTS
                 </div>
                 <button
                   onClick={() => signOut({ callbackUrl: '/login' })}

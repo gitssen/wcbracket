@@ -10,7 +10,7 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    redirect('/signup');
+    redirect('/login');
   }
 
   // Fetch all matches from the database sorted by ID

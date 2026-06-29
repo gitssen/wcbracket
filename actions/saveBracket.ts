@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { runScoringEngine } from '@/lib/scoring';
 
 export interface PredictionInput {
   matchId: number;
@@ -63,6 +64,13 @@ export async function saveBracket(predictions: PredictionInput[]) {
         data: { hasSubmitted: true },
       }),
     ]);
+
+    // Run scoring immediately so points appear on leaderboard without waiting for cron
+    try {
+      await runScoringEngine();
+    } catch (e) {
+      console.error('Post-lock scoring failed:', e);
+    }
 
     revalidatePath('/');
     revalidatePath('/leaderboard');

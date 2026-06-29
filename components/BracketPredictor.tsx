@@ -144,7 +144,7 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
     }
     // Auto-fill predictions for completed matches with actual results
     for (const m of initialMatches) {
-      if (m.isCompleted && m.actualWinnerCode && !map[m.id]) {
+      if (m.id === 1 && m.isCompleted && m.actualWinnerCode && !map[m.id]) {
         map[m.id] = {
           matchId: m.id,
           predictedWinner: m.actualWinner || '',
