@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
         sql: 'INSERT INTO CronLog (status, message) VALUES (?, ?)',
         args: ['error', error.message?.slice(0, 500) ?? 'Unknown error'],
       });
-    } catch (_) {}
+    } catch { /* ignore logging failure */ }
 
     return NextResponse.json(
       { error: 'Internal server error during sync.', details: error.message },
