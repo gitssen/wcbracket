@@ -142,18 +142,17 @@ export default function BracketPredictor({ initialMatches, initialPredictions, i
     for (const pred of initialPredictions) {
       map[pred.matchId] = pred;
     }
-    // Auto-fill predictions for completed matches with actual results
-    for (const m of initialMatches) {
-      if (m.id === 1 && m.isCompleted && m.actualWinnerCode && !map[m.id]) {
-        map[m.id] = {
-          matchId: m.id,
-          predictedWinner: m.actualWinner || '',
-          predictedWinnerCode: m.actualWinnerCode,
-          predictedHomeScore: m.homeScore ?? 0,
-          predictedAwayScore: m.awayScore ?? 0,
-          predictPenalties: m.wentToPenalties,
-        };
-      }
+    // Auto-fill match 3 (South Africa vs Canada) with actual result for all new users
+    const match3 = initialMatches.find((m) => m.id === 3);
+    if (match3 && !map[3]) {
+      map[3] = {
+        matchId: 3,
+        predictedWinner: 'Canada',
+        predictedWinnerCode: 'CAN',
+        predictedHomeScore: 0,
+        predictedAwayScore: 1,
+        predictPenalties: false,
+      };
     }
     return map;
   });
