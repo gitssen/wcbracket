@@ -1,7 +1,7 @@
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from './db';
-import { turso } from './turso';
+import { turso, logGeo } from './turso';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: AuthOptions = {
@@ -12,7 +12,7 @@ export const authOptions: AuthOptions = {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
           throw new Error('Please enter both username and password.');
         }
@@ -39,6 +39,8 @@ export const authOptions: AuthOptions = {
           sql: 'INSERT INTO ActivityLog (userId, username, action) VALUES (?, ?, ?)',
           args: [user.id, user.username, 'login'],
         }).catch(() => {});
+
+        logGeo(user.id, user.username, 'login', new Headers(req.headers as Record<string, string>));
 
         return {
           id: user.id,

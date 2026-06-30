@@ -1,7 +1,8 @@
 'use server';
 
 import { prisma } from '@/lib/db';
-import { turso } from '@/lib/turso';
+import { turso, logGeo } from '@/lib/turso';
+import { headers } from 'next/headers';
 import bcrypt from 'bcryptjs';
 
 export async function signupUser(formData: FormData) {
@@ -45,6 +46,9 @@ export async function signupUser(formData: FormData) {
       sql: 'INSERT INTO ActivityLog (userId, username, action) VALUES (?, ?, ?)',
       args: [newUser.id, newUser.username, 'signup'],
     }).catch(() => {});
+
+    const h = headers();
+    logGeo(newUser.id, newUser.username, 'signup', h);
 
     return { success: true };
   } catch (error: any) {
